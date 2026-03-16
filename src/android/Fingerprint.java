@@ -142,16 +142,22 @@ public class Fingerprint extends CordovaPlugin {
     }
 
     private PluginError canAuthenticate(boolean requireStrongBiometrics) {
-        int error = BiometricManager.from(cordova.getContext()).canAuthenticate(requireStrongBiometrics ? BiometricManager.Authenticators.BIOMETRIC_STRONG : BiometricManager.Authenticators.BIOMETRIC_WEAK);
+        Context context = cordova.getContext();
+        boolean hasFingerprint = context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT);
+        int error = BiometricManager.from(context).canAuthenticate(requireStrongBiometrics ? BiometricManager.Authenticators.BIOMETRIC_STRONG : BiometricManager.Authenticators.BIOMETRIC_WEAK);
         switch (error) {
-            case BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE:
-            case BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE:
-                return PluginError.BIOMETRIC_HARDWARE_NOT_SUPPORTED;
-            case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
-                return PluginError.BIOMETRIC_NOT_ENROLLED;
-            case BiometricManager.BIOMETRIC_SUCCESS:
-            default:
-                return null;
+        case BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE:
+            return PluginError.BIOMETRIC_HARDWARE_NOT_SUPPORTED;
+        case BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE:
+            if (!hasFingerprint) {
+            return PluginError.BIOMETRIC_HARDWARE_NOT_SUPPORTED;
+            }
+            return null;
+        case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
+            return PluginError.BIOMETRIC_NOT_ENROLLED;
+        case BiometricManager.BIOMETRIC_SUCCESS:
+        default:
+            return null;
         }
     }
 
